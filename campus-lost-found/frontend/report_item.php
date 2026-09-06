@@ -68,6 +68,25 @@ $user = $_SESSION['user'];
 
           <div class="row g-3">
 
+            <div class="col-12">
+              <div class="alert mb-0" style="background:rgba(79,70,229,0.12);border:1px solid rgba(79,70,229,0.25);color:#c7d2fe;border-radius:10px;padding:.85rem 1rem;">
+                <div class="d-flex align-items-center gap-2 fw-semibold">
+                  <i class="bi bi-person-badge-fill"></i>
+                  Reporter Details
+                </div>
+                <div class="row g-2 mt-2">
+                  <div class="col-md-6">
+                    <label class="form-label mb-1" style="font-size:.8rem;color:#cbd5e1;">Name</label>
+                    <input type="text" name="reporter_name" value="<?= htmlspecialchars($user['name']) ?>" class="form-control" readonly />
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label mb-1" style="font-size:.8rem;color:#cbd5e1;">Email</label>
+                    <input type="email" name="reporter_email" value="<?= htmlspecialchars($user['email']) ?>" class="form-control" readonly />
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <!-- Item Name -->
             <div class="col-md-8">
               <label class="form-label">Item Name <span style="color:#ef4444;">*</span></label>

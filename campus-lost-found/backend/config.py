@@ -16,5 +16,13 @@ class Config:
     ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "gif", "webp"}
     MAX_CONTENT_LENGTH = 5 * 1024 * 1024   # 5 MB
 
+    # Email settings
+    EMAIL_HOST = os.getenv("EMAIL_HOST", "localhost")
+    EMAIL_PORT = int(os.getenv("EMAIL_PORT", "25"))
+    EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "false").lower() == "true"
+    EMAIL_USER = os.getenv("EMAIL_USER", "")
+    EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD", "")
+    EMAIL_FROM = os.getenv("EMAIL_FROM", "campus-lost-found@localhost")
+
     # Security
     SECRET_KEY = os.getenv("SECRET_KEY", "campus-lf-secret-key-change-in-prod")

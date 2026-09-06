@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Cybersecurity Synopsis - Campus Lost &amp; Found</title>
+<style>
+  @page { size: A4; margin: 16mm; }
+  * { box-sizing: border-box; }
+  body { margin: 0; color: #172033; font-family: Arial, sans-serif; font-size: 10.5pt; line-height: 1.45; }
+  .header { background: #10233f; color: white; padding: 22px 26px; border-radius: 10px; }
+  .eyebrow { color: #67e8f9; font-size: 9pt; font-weight: bold; letter-spacing: 1.5px; text-transform: uppercase; }
+  h1 { margin: 5px 0 4px; font-size: 25pt; }
+  .subtitle { margin: 0; color: #dbeafe; font-size: 11pt; }
+  h2 { color: #10233f; margin: 20px 0 8px; font-size: 15pt; }
+  .intro { margin: 0 0 13px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .card { padding: 13px 15px; border-left: 7px solid; border-radius: 7px; min-height: 126px; }
+  .card h3 { margin: 0 0 5px; font-size: 12pt; }
+  .card p { margin: 0; }
+  .blue { background: #e8f1ff; border-color: #2563eb; }
+  .blue h3 { color: #1d4ed8; }
+  .teal { background: #e5f9f6; border-color: #0f9f91; }
+  .teal h3 { color: #087f75; }
+  .amber { background: #fff5d9; border-color: #e2a400; }
+  .amber h3 { color: #9a6800; }
+  .green { background: #e8f8ed; border-color: #16a34a; }
+  .green h3 { color: #147d3b; }
+  .implementation { background: #f3f5f8; border: 1px solid #d8dee8; border-radius: 8px; padding: 13px 17px; }
+  .implementation ul { margin: 6px 0 0; padding-left: 19px; }
+  .implementation li { margin: 3px 0; }
+  .note { margin-top: 13px; padding: 11px 14px; background: #fef2f2; border-left: 5px solid #ef4444; border-radius: 5px; }
+  .footer { margin-top: 19px; padding-top: 8px; border-top: 1px solid #d8dee8; color: #687386; font-size: 8.5pt; }
+</style>
+</head>
+<body>
+  <header class="header">
+    <div class="eyebrow">Project Security Overview</div>
+    <h1>Cybersecurity in Campus Lost &amp; Found</h1>
+    <p class="subtitle">A short synopsis of the security features added to the portal</p>
+  </header>
+
+  <h2>Why Cybersecurity Was Used</h2>
+  <p class="intro">Cybersecurity was used because the portal stores names, email addresses, phone numbers, passwords, and lost-item reports. These controls help keep personal information private, prevent unauthorized changes, and ensure that the website remains available for students and administrators.</p>
+
+  <h2>Types of Cybersecurity Included</h2>
+  <section class="grid">
+    <article class="card blue">
+      <h3>1. Access Control</h3>
+      <p>Access control ensures that people reach only the area intended for them. The portal provides separate User and Admin consoles and checks the selected role during login. <strong>Example:</strong> a normal user is rejected when requesting the Admin Console.</p>
+    </article>
+    <article class="card teal">
+      <h3>2. Data Protection</h3>
+      <p>Data protection helps keep personal details and reports private. The application sends structured requests, validates input, and displays user information safely. <strong>Example:</strong> PHP escapes report text before showing it in the browser.</p>
+    </article>
+    <article class="card amber">
+      <h3>3. Account Security</h3>
+      <p>Account security protects user identities. Passwords are hashed with bcrypt before storage, and login uses password verification instead of exposing stored passwords. <strong>Example:</strong> a wrong password returns an error without revealing the stored hash.</p>
+    </article>
+    <article class="card green">
+      <h3>4. Safe Reporting</h3>
+      <p>Safe reporting encourages responsible sharing of lost-item details. Users can report items through the portal while keeping communication organized through the admin workflow. <strong>Example:</strong> a non-image file or image larger than 5 MB is rejected.</p>
+    </article>
+  </section>
+
+  <h2>What Was Added</h2>
+  <div class="implementation">
+    <ul>
+      <li>A highlighted <strong>Security Essentials</strong> panel was added to the login page.</li>
+      <li>Each security type has a dedicated icon, color, title, and short explanation.</li>
+      <li>The layout is responsive and fits beside the login form on desktop and above it on smaller screens.</li>
+      <li>The existing authentication flow and API behavior were preserved.</li>
+    </ul>
+  </div>
+
+  <h2>How the Protection Works</h2>
+  <div class="implementation">
+    <p class="intro">When a user signs in, the backend looks up the account with a parameterized query, checks the submitted password against the bcrypt hash, and compares the requested console with the account role. Protected PHP pages also check the active session before loading. Database commands use parameters instead of joining raw user input to SQL, and uploaded filenames, extensions, and sizes are validated before files are stored.</p>
+    <p class="intro"><strong>Complete example:</strong> if John selects “Admin Console,” the backend verifies his password and sees that his database role is “user.” It returns an authorization error, so the Admin Console is not opened. If John uploads a PHP file renamed as an image, the upload validation rejects it because its extension is not allowed.</p>
+  </div>
+
+  <div class="note"><strong>Security reminder:</strong> Use a strong, unique password and avoid sharing private contact or identification details in public item descriptions.</div>
+  <div class="footer">Campus Lost &amp; Found Portal | Cybersecurity Synopsis</div>
+</body>
+</html>

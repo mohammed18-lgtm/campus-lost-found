@@ -121,13 +121,11 @@ async function loadDashboard() {
       apiGet('/items/recent?limit=8'),
     ]);
 
-    // stat cards
     setText('stat-lost',    stats.lost    ?? 0);
     setText('stat-found',   stats.found   ?? 0);
     setText('stat-pending', (stats.lost + stats.found) ?? 0);
     setText('stat-claimed', stats.claimed ?? 0);
 
-    // recent table
     const tbody = document.getElementById('recentBody');
     if (!tbody) return;
 
@@ -152,6 +150,195 @@ async function loadDashboard() {
   }
 }
 
+async function loadAdminDashboard() {
+  showSpinner();
+  try {
+    const [stats, recent, messages] = await Promise.all([
+      apiGet('/stats'),
+      apiGet('/items/recent?limit=8'),
+      apiGet('/messages'),
+    ]);
+
+    setText('admin-total-reports', (stats.lost + stats.found + (stats.claimed || 0)) ?? 0);
+    setText('admin-found-items', stats.found ?? 0);
+    setText('admin-message-count', Array.isArray(messages) ? messages.length : 0);
+    setText('admin-notification-count', 0);
+
+    const reportsTable = document.getElementById('adminReportsTable');
+    if (reportsTable) {
+      reportsTable.innerHTML = recent.map(item => `
+        <tr>
+          <td><span class="fw-semibold">${esc(item.item_name)}</span></td>
+          <td><span class="cat-chip">${esc(item.category)}</span></td>
+          <td>${statusBadge(item.status)}</td>
+          <td>${esc(item.location)}</td>
+          <td>
+            <div class="small fw-semibold">${esc(item.reporter_name || 'Unknown')}</div>
+            <div class="small text-muted">${esc(item.reporter_email || item.contact_number || 'No email')}</div>
+          </td>
+          <td>
+            <button class="btn btn-sm btn-outline-info" onclick="sendNotification(${item.reported_by_user_id || item.id}, '${esc(item.item_name)}', '${esc(item.reporter_email || '')}')">Notify Owner</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    const list = document.getElementById('adminMessagesList');
+    if (list) {
+      if (!Array.isArray(messages) || !messages.length) {
+        list.innerHTML = '<div class="empty-state panel"><i class="bi bi-inbox"></i><p>No messages from users yet.</p></div>';
+        return;
+      }
+
+      list.innerHTML = messages.map(msg => `
+        <div class="panel" style="padding:1rem;">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <div>
+              <strong>${esc(msg.user_name)}</strong>
+              <div class="text-muted small">${esc(msg.subject || 'Found item report')}</div>
+            </div>
+            <span class="status-badge badge-found"><span class="status-dot"></span>${esc(msg.status || 'new')}</span>
+          </div>
+          <p class="mb-2" style="color:#dbeafe;">${esc(msg.message)}</p>
+          <div class="d-flex justify-content-between align-items-center gap-2">
+            <small class="text-muted">${msg.item_name ? 'Item: ' + esc(msg.item_name) : 'General report'}<br><small>${esc(msg.user_email || 'no email')}</small></small>
+            <div class="d-flex gap-2">
+              <button class="btn btn-sm btn-primary" onclick="openResponseModal(${msg.id}, ${msg.user_id}, '${esc(msg.user_name)}', '${esc(msg.message)}', '${esc(msg.user_email || '')}')"><i class="bi bi-reply me-1"></i>Reply</button>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+  } catch (err) {
+    toast('Failed to load admin console: ' + err.message, 'error');
+  } finally {
+    hideSpinner();
+  }
+}
+
+// Open response modal and populate with message details
+function openResponseModal(messageId, userId, userName, userMessage, userEmail = '') {
+  const modal = new bootstrap.Modal(document.getElementById('responseModal'));
+  const adminUser = JSON.parse(localStorage.getItem('admin_user') || '{"name":"Admin"}');
+  
+  document.getElementById('responseFromName').textContent = adminUser.name || 'Admin';
+  document.getElementById('responseToEmail').textContent = userEmail || 'unknown@campus.edu';
+  document.getElementById('responseUserMessage').textContent = userMessage;
+  document.getElementById('responseText').value = '';
+  
+  // Store message info for sending
+  window.currentResponseData = { messageId, userId, userName, userEmail };
+  
+  modal.show();
+}
+
+// Send the response
+async function sendAdminResponse() {
+  const responseText = document.getElementById('responseText').value.trim();
+  if (!responseText) {
+    toast('Please enter a response message', 'warning');
+    return;
+  }
+
+  if (!window.currentResponseData) {
+    toast('Message data not found', 'error');
+    return;
+  }
+
+  showSpinner();
+  try {
+    const adminUser = JSON.parse(localStorage.getItem('admin_user') || '{"id":1,"name":"Admin"}');
+    const userEmail = window.currentResponseData.userEmail || document.getElementById('responseToEmail').textContent;
+
+    const { status, data } = await apiPost('/message-response', {
+      message_id: window.currentResponseData.messageId,
+      user_id: window.currentResponseData.userId,
+      user_email: userEmail,
+      admin_id: adminUser.id || 1,
+      admin_name: adminUser.name || 'Admin',
+      response_text: responseText
+    });
+
+    if (status === 201) {
+      toast(data.email_sent ? '✅ Response sent! Email delivered to user.' : '✅ Response saved. Email send failed.', 'success');
+      bootstrap.Modal.getInstance(document.getElementById('responseModal')).hide();
+      loadAdminDashboard(); // Reload messages
+    } else {
+      toast(data.error || 'Failed to send response', 'error');
+    }
+  } catch (err) {
+    toast('Error sending response: ' + err.message, 'error');
+  } finally {
+    hideSpinner();
+  }
+}
+
+// Setup response button listener
+document.addEventListener('DOMContentLoaded', () => {
+  const sendResponseBtn = document.getElementById('sendResponseBtn');
+  if (sendResponseBtn) {
+    sendResponseBtn.addEventListener('click', sendAdminResponse);
+  }
+});
+
+async function sendNotification(userId, itemName, recipientEmail = '') {
+  const subject = itemName ? `Update for ${itemName}` : 'Lost item update';
+  const message = 'We found your item. Please come and collect it from the office.';
+
+  try {
+    const { status, data } = await apiPost('/notifications', {
+      user_id: Number(userId),
+      item_id: Number(userId) || null,
+      item_name: itemName || 'your item',
+      recipient_email: recipientEmail,
+      title: subject,
+      message,
+      sent_by: 'Admin'
+    });
+
+    if (status === 201) {
+      toast(data.email_sent ? 'Notification sent to the owner email.' : 'Owner notice saved in the portal.', 'success');
+    } else {
+      toast(data.error || 'Could not send notification.', 'error');
+    }
+  } catch (err) {
+    toast('Error sending notification: ' + err.message, 'error');
+  }
+}
+
+const foundItemMessageForm = document.getElementById('foundItemMessageForm');
+if (foundItemMessageForm) {
+  foundItemMessageForm.addEventListener('submit', async function (e) {
+    e.preventDefault();
+    const form = e.currentTarget;
+    const formData = new FormData(form);
+    const payload = {
+      user_id: Number(document.querySelector('input[name="user_id"]')?.value || 1),
+      user_name: document.querySelector('input[name="reporter_name"]')?.value || 'Current User',
+      item_name: formData.get('item_name') || '',
+      subject: formData.get('subject') || 'Found item report',
+      message: formData.get('message') || ''
+    };
+
+    try {
+      const { status, data } = await fetch(`${API}/messages`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(payload)
+      }).then(async res => ({ status: res.status, data: await res.json() }));
+
+      if (status === 201) {
+        toast('Your message was sent to the admin.', 'success');
+        form.reset();
+      } else {
+        toast(data.error || 'Could not send the message.', 'error');
+      }
+    } catch (err) {
+      toast('Failed to send message: ' + err.message, 'error');
+    }
+  });
+}
+
 /* ═══════════════════════════════════════════════════════════
    BROWSE ITEMS
    ═══════════════════════════════════════════════════════════ */
@@ -168,10 +355,29 @@ async function loadItems(page = 1) {
     const data = await apiGet('/items?' + params.toString());
     renderItemCards(data.items);
     renderPagination(data.page, data.total_pages, data.total);
+    await loadLocationOptions();
   } catch (err) {
     toast('Failed to load items: ' + err.message, 'error');
   } finally {
     hideSpinner();
+  }
+}
+
+async function loadLocationOptions() {
+  const select = document.getElementById('locationFilter');
+  if (!select) return;
+
+  const currentValue = select.value;
+  try {
+    const locations = await apiGet('/locations');
+    const options = ['<option value="">All Locations</option>'];
+    locations.forEach(location => {
+      options.push(`<option value="${esc(location)}">${esc(location)}</option>`);
+    });
+    select.innerHTML = options.join('');
+    select.value = locations.includes(currentValue) ? currentValue : '';
+  } catch (err) {
+    console.warn('Location filter unavailable', err);
   }
 }
 
@@ -194,7 +400,7 @@ function renderItemCards(items) {
 
     return `
     <div class="col-lg-4 col-md-6 col-sm-12">
-      <div class="item-card">
+      <div class="item-card" style="cursor:pointer;" onclick="openItemDetails(${JSON.stringify(item).replace(/"/g, '&quot;')}); return false;">
         <div class="item-card-img">
           ${itemImageHtml(item.image, item.item_name)}
         </div>
@@ -248,9 +454,11 @@ function applyFilters() {
   const search   = document.getElementById('searchInput')?.value.trim();
   const category = document.getElementById('categoryFilter')?.value;
   const status   = document.getElementById('statusFilter')?.value;
+  const location = document.getElementById('locationFilter')?.value;
   if (search)   currentFilters.search   = search;
   if (category) currentFilters.category = category;
   if (status)   currentFilters.status   = status;
+  if (location) currentFilters.location = location;
   loadItems(1);
 }
 
@@ -267,12 +475,32 @@ function openClaimModal(id, name) {
 
 async function confirmClaim() {
   if (!claimItemId) return;
+
+  const claimantName = document.getElementById('claimantName')?.value.trim();
+  const claimantEmail = document.getElementById('claimantEmail')?.value.trim();
+  const claimantPhone = document.getElementById('claimantPhone')?.value.trim();
+  const identifyingDetails = document.getElementById('claimantDetails')?.value.trim();
+
+  if (!claimantName || !claimantEmail || !identifyingDetails) {
+    toast('Please provide your name, email, and identifying details.', 'warning');
+    return;
+  }
+
   showSpinner();
   try {
-    const { status, data } = await apiPost(`/claim/${claimItemId}`, {});
-    if (status === 200) {
-      toast('Item successfully claimed!', 'success');
+    const { status, data } = await apiPost(`/claim/${claimItemId}`, {
+      claimant_name: claimantName,
+      claimant_email: claimantEmail,
+      claimant_phone: claimantPhone,
+      identifying_details: identifyingDetails
+    });
+    if (status === 201 || status === 200) {
+      toast('Claim request submitted for admin review.', 'success');
       bootstrap.Modal.getInstance(document.getElementById('claimModal')).hide();
+      document.getElementById('claimantName').value = '';
+      document.getElementById('claimantEmail').value = '';
+      document.getElementById('claimantPhone').value = '';
+      document.getElementById('claimantDetails').value = '';
       await loadItems(currentPage);
     } else {
       toast(data.error || 'Failed to claim item.', 'error');
@@ -353,6 +581,10 @@ async function submitReportForm(e) {
 
   try {
     const fd = new FormData(form);
+    const reporterName = document.querySelector('input[name="reporter_name"]')?.value || '';
+    const reporterEmail = document.querySelector('input[name="reporter_email"]')?.value || '';
+    fd.set('reporter_name', reporterName);
+    fd.set('reporter_email', reporterEmail);
     const response = await fetch(`${API}/item`, { method: 'POST', body: fd });
     const data = await response.json();
 

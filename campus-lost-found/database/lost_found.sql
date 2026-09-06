@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS users (
     name VARCHAR(100) NOT NULL,
     email VARCHAR(150) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
+    role ENUM('user', 'admin') NOT NULL DEFAULT 'user',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -37,10 +38,10 @@ CREATE TABLE IF NOT EXISTS items (
 -- SAMPLE USERS (passwords are hashed via bcrypt)
 -- Plain-text passwords: admin123, student123
 -- ============================================
-INSERT INTO users (name, email, password) VALUES
-('Admin User',     'admin@campus.edu',   '$2b$12$8KzFl2O7i9RvWvQxN1DxXeqZXCdYs1V9VVBuOLKUQD5WyT2gE.hZO'),
-('John Student',   'john@campus.edu',    '$2b$12$8KzFl2O7i9RvWvQxN1DxXeqZXCdYs1V9VVBuOLKUQD5WyT2gE.hZO'),
-('Sarah Johnson',  'sarah@campus.edu',   '$2b$12$8KzFl2O7i9RvWvQxN1DxXeqZXCdYs1V9VVBuOLKUQD5WyT2gE.hZO');
+INSERT INTO users (name, email, password, role) VALUES
+('Admin User',     'admin@campus.edu',   '$2b$12$8KzFl2O7i9RvWvQxN1DxXeqZXCdYs1V9VVBuOLKUQD5WyT2gE.hZO', 'admin'),
+('John Student',   'john@campus.edu',    '$2b$12$8KzFl2O7i9RvWvQxN1DxXeqZXCdYs1V9VVBuOLKUQD5WyT2gE.hZO', 'user'),
+('Sarah Johnson',  'sarah@campus.edu',   '$2b$12$8KzFl2O7i9RvWvQxN1DxXeqZXCdYs1V9VVBuOLKUQD5WyT2gE.hZO', 'user');
 
 -- ============================================
 -- SAMPLE ITEMS

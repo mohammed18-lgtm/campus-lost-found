@@ -110,6 +110,14 @@ $user = $_SESSION['user'];
       </select>
     </div>
 
+    <div style="min-width:180px;max-width:220px;">
+      <label class="form-label" style="font-size:.78rem;text-transform:uppercase;
+             letter-spacing:.05em;color:#64748b;margin-bottom:.3rem;">Location</label>
+      <select id="locationFilter" class="form-select" onchange="applyFilters()">
+        <option value="">All Locations</option>
+      </select>
+    </div>
+
     <div class="d-flex align-items-end gap-2">
       <button onclick="applyFilters()" class="btn"
               style="background:linear-gradient(135deg,#4f46e5,#06b6d4);color:#fff;
@@ -152,10 +160,27 @@ $user = $_SESSION['user'];
       </div>
       <div class="modal-body" style="font-size:.92rem;color:#cbd5e1;line-height:1.7;">
         <p>Are you sure you want to claim <strong id="claimItemName" style="color:#fff;"></strong>?</p>
+        <div class="row g-3 mb-2">
+          <div class="col-md-6">
+            <label class="form-label small">Full name</label>
+            <input type="text" id="claimantName" class="form-control" required />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label small">Email</label>
+            <input type="email" id="claimantEmail" class="form-control" required />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label small">Phone</label>
+            <input type="tel" id="claimantPhone" class="form-control" />
+          </div>
+          <div class="col-12">
+            <label class="form-label small">Identifying details</label>
+            <textarea id="claimantDetails" class="form-control" rows="3" placeholder="Describe the item, where it was found, and any identifying features." required></textarea>
+          </div>
+        </div>
         <p class="mb-0" style="font-size:.83rem;color:#64748b;">
           <i class="bi bi-info-circle me-1"></i>
-          This will mark the item as <span class="status-badge badge-claimed">Claimed</span>
-          and it will no longer be available for other claims.
+          The admin will review the details before approving the claim.
         </p>
       </div>
       <div class="modal-footer">
@@ -176,6 +201,64 @@ $user = $_SESSION['user'];
   </div>
 </div>
 
+<!-- ── ITEM DETAILS MODAL ────────────────────────────────── -->
+<div class="modal fade" id="itemDetailsModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="bi bi-info-circle me-2 text-info"></i>Item Details
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" style="font-size:.92rem;color:#cbd5e1;line-height:1.8;">
+        <div class="row g-3">
+          <div class="col-12">
+            <div id="detailsImage" style="width:100%;height:250px;background:rgba(0,0,0,.3);border-radius:10px;overflow:hidden;display:flex;align-items:center;justify-content:center;">
+              <img id="detailsImageContent" src="" alt="Item" style="max-width:100%;max-height:100%;object-fit:cover;" />
+              <i class="bi bi-image" id="detailsImagePlaceholder" style="font-size:3rem;color:#64748b;"></i>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <label class="small" style="color:#94a3b8;text-transform:uppercase;letter-spacing:.05em;">Item Name</label>
+            <p id="detailsName" class="fw-600" style="color:#fff;margin:0;"></p>
+          </div>
+          <div class="col-md-6">
+            <label class="small" style="color:#94a3b8;text-transform:uppercase;letter-spacing:.05em;">Category</label>
+            <p id="detailsCategory" style="color:#cbd5e1;margin:0;"></p>
+          </div>
+          <div class="col-md-6">
+            <label class="small" style="color:#94a3b8;text-transform:uppercase;letter-spacing:.05em;">Status</label>
+            <p id="detailsStatus" style="color:#cbd5e1;margin:0;"></p>
+          </div>
+          <div class="col-md-6">
+            <label class="small" style="color:#94a3b8;text-transform:uppercase;letter-spacing:.05em;">Location</label>
+            <p id="detailsLocation" style="color:#cbd5e1;margin:0;"></p>
+          </div>
+          <div class="col-md-6">
+            <label class="small" style="color:#94a3b8;text-transform:uppercase;letter-spacing:.05em;">Date</label>
+            <p id="detailsDate" style="color:#cbd5e1;margin:0;"></p>
+          </div>
+          <div class="col-md-6">
+            <label class="small" style="color:#94a3b8;text-transform:uppercase;letter-spacing:.05em;">Contact</label>
+            <p id="detailsContact" style="color:#cbd5e1;margin:0;"></p>
+          </div>
+          <div class="col-12">
+            <label class="small" style="color:#94a3b8;text-transform:uppercase;letter-spacing:.05em;">Description</label>
+            <p id="detailsDescription" style="color:#cbd5e1;margin:0;line-height:1.6;"></p>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#94a3b8;border-radius:10px;padding:.55rem 1.2rem;" data-bs-dismiss="modal">Close</button>
+        <button type="button" id="detailsClaimBtn" class="btn" style="background:linear-gradient(135deg,#4f46e5,#06b6d4);color:#fff;border:none;border-radius:10px;padding:.55rem 1.4rem;font-weight:600;" onclick="openClaimModalFromDetails()">
+          <i class="bi bi-hand-index me-1"></i>Claim This Item
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div id="toast-container"></div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="js/main.js"></script>
@@ -187,6 +270,55 @@ $user = $_SESSION['user'];
     currentFilters = {};
     loadItems(1);
   }
+  
+  let detailsItemId = null;
+  
+  function openItemDetails(item) {
+    detailsItemId = item.id;
+    document.getElementById('detailsName').textContent = item.item_name || 'Unknown';
+    document.getElementById('detailsCategory').textContent = item.category || 'N/A';
+    document.getElementById('detailsStatus').innerHTML = `<span class="badge" style="${getStatusStyle(item.status)}">${item.status}</span>`;
+    document.getElementById('detailsLocation').textContent = item.location || 'N/A';
+    document.getElementById('detailsDate').textContent = item.date || 'N/A';
+    document.getElementById('detailsContact').textContent = item.contact_number || 'Not provided';
+    document.getElementById('detailsDescription').textContent = item.description || 'No description provided.';
+    
+    const imageEl = document.getElementById('detailsImageContent');
+    const placeholderEl = document.getElementById('detailsImagePlaceholder');
+    
+    if (item.image) {
+      imageEl.src = item.image;
+      imageEl.style.display = 'block';
+      placeholderEl.style.display = 'none';
+    } else {
+      imageEl.style.display = 'none';
+      placeholderEl.style.display = 'block';
+    }
+    
+    const claimBtn = document.getElementById('detailsClaimBtn');
+    claimBtn.disabled = item.status === 'Claimed';
+    claimBtn.style.opacity = item.status === 'Claimed' ? '0.5' : '1';
+    
+    const modal = new bootstrap.Modal(document.getElementById('itemDetailsModal'));
+    modal.show();
+  }
+  
+  function getStatusStyle(status) {
+    if (status === 'Lost') return 'background:rgba(239,68,68,.2);color:#fca5a5;';
+    if (status === 'Found') return 'background:rgba(34,197,94,.2);color:#86efac;';
+    if (status === 'Claimed') return 'background:rgba(59,130,246,.2);color:#93c5fd;';
+    return 'background:rgba(148,163,184,.2);color:#cbd5e1;';
+  }
+  
+  function openClaimModalFromDetails() {
+    if (detailsItemId) {
+      bootstrap.Modal.getInstance(document.getElementById('itemDetailsModal')).hide();
+      setTimeout(() => {
+        openClaimModal(detailsItemId, document.getElementById('detailsName').textContent);
+      }, 200);
+    }
+  }
+  
   document.addEventListener('DOMContentLoaded', () => loadItems(1));
 </script>
 </body>

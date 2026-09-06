@@ -2,9 +2,11 @@ import os
 from flask import Flask
 from flask_cors import CORS
 from config import Config
+from db import ensure_schema
 
 # ── create upload folder ──────────────────────────────────────────────────────
 os.makedirs(Config.UPLOAD_FOLDER, exist_ok=True)
+ensure_schema()
 
 # ── factory ───────────────────────────────────────────────────────────────────
 def create_app():
